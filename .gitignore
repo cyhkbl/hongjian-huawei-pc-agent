@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+runs/
+.kb_cache/
+kb_local/
+kb_snapshot/
+*.log
+.pytest_cache/
+node_modules/
+dist/

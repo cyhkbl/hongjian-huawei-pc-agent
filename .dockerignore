@@ -1,0 +1,9 @@
+__pycache__
+.venv
+.git
+runs
+.kb_cache
+kb_local
+tests
+docs/shots
+.env

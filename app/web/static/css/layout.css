@@ -1,0 +1,84 @@
+/* ---- top bar ---- */
+.top {
+  position: sticky; top: 0; z-index: 30;
+  height: var(--top-h);
+  display: flex; align-items: center; gap: 20px;
+  padding: 0 20px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.seal {
+  width: 34px; height: 34px; flex: none; display: grid; place-items: center;
+  background: var(--red); color: #fff; font: 700 20px/1 var(--serif);
+  border-radius: 3px; transform: rotate(-3deg);
+}
+.brand-text { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.brand h1 { font-size: 22px; letter-spacing: .08em; }
+.brand p { color: var(--mute); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.views { display: flex; gap: 4px; margin-left: 12px; }
+.view-btn {
+  background: none; border: 0; padding: 8px 12px; min-height: 40px; color: var(--ink-2);
+  border-bottom: 2px solid transparent; border-radius: 0;
+}
+.view-btn:hover { color: var(--ink); }
+.view-btn[aria-current="page"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--red); }
+.kb-pill {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 0 14px; background: var(--sheet);
+  border: 1px solid var(--ink); border-radius: 999px; font-size: var(--fs-sm); max-width: 46vw;
+}
+.kb-pill span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kb-pill:hover { background: var(--paper-2); }
+.lamp { width: 9px; height: 9px; flex: none; border-radius: 50%; background: var(--rule-2); box-shadow: 0 0 0 2px var(--paper-2); }
+.lamp[data-state="ok"] { background: var(--ok); }
+.lamp[data-state="local"] { background: var(--warn); }
+.lamp[data-state="bad"] { background: var(--red); }
+
+/* ---- three columns ---- */
+.shell {
+  display: grid;
+  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr) minmax(320px, 380px);
+  height: calc(100vh - var(--top-h));
+}
+.col { min-width: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--rule-2) transparent; }
+.col-task { padding: 18px 18px 40px; border-right: 1px solid var(--rule); background: var(--paper); }
+.col-article { padding: 0; background: var(--paper-2); }
+.col-side { padding: 0; border-left: 1px solid var(--rule); background: var(--paper); }
+
+.panebar { display: none; }
+
+/* ---- archive page ---- */
+.archive { max-width: 980px; margin: 0 auto; padding: 24px 20px 80px; }
+
+/* ---- narrow: one pane at a time ---- */
+@media (max-width: 1100px) {
+  .shell { display: block; height: auto; min-height: calc(100vh - var(--top-h) - var(--bar-h)); padding-bottom: var(--bar-h); }
+  .col { overflow: visible; border: 0; }
+  .shell[data-pane="task"] > .col-article, .shell[data-pane="task"] > .col-side,
+  .shell[data-pane="article"] > .col-task, .shell[data-pane="article"] > .col-side,
+  .shell[data-pane="side"] > .col-task, .shell[data-pane="side"] > .col-article { display: none; }
+  .col-task { max-width: 720px; margin: 0 auto; }
+  .col-side { max-width: 720px; margin: 0 auto; }
+  .panebar {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h); z-index: 30;
+    background: var(--paper); border-top: 1px solid var(--ink);
+  }
+  .panebar[hidden], body[data-view="archive"] .panebar { display: none; }
+  .panebar button { background: none; border: 0; min-height: 44px; color: var(--ink-2); border-top: 3px solid transparent; }
+  .panebar button[aria-current="true"] { color: var(--ink); font-weight: 700; border-top-color: var(--red); background: var(--paper-2); }
+}
+@media (max-width: 640px) {
+  .top { padding: 0 12px; gap: 8px; }
+  .brand p { display: none; }
+  .views { margin-left: 0; }
+  .view-btn { padding: 8px 8px; font-size: var(--fs-sm); }
+  .kb-pill { padding: 0 10px; max-width: 34vw; }
+  .col-task { padding: 14px 14px 40px; }
+  .archive { padding: 16px 12px 60px; }
+}
+@media (max-width: 420px) {
+  .view-btn[data-view="archive"] { font-size: 12px; }
+  .kb-pill #kb-pill-text { max-width: 14ch; }
+}

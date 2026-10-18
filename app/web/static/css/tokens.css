@@ -1,0 +1,41 @@
+/* 笺：暖白纸面、墨黑文字、朱红只用于“要你注意”的地方（印章、批注、命中、主按钮）。 */
+:root {
+  --paper: #f8f5ee;
+  --paper-2: #f0ebe0;
+  --paper-3: #e6dfd0;
+  --sheet: #fffdf9;
+  --ink: #1d1b19;
+  --ink-2: #4a443d;
+  --mute: #6b6358;
+  --rule: #d8cfbf;
+  --rule-2: #c3b8a4;
+
+  --red: #c7000b;
+  --red-ink: #a30009;
+  --red-wash: #f8e4df;
+  --ok: #2c6a4c;
+  --ok-wash: #e1eee5;
+  --warn: #86560a;
+  --warn-wash: #f5e8c9;
+  --info: #2e5a7a;
+  --info-wash: #e1ebf2;
+
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong", "SimSun", "Times New Roman", serif;
+  --sans: "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Hiragino Sans GB", system-ui, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-base: 15px;
+  --fs-md: 17px;
+  --fs-lg: 20px;
+  --fs-xl: 26px;
+
+  --r: 3px;
+  --r-lg: 6px;
+  --gap: 16px;
+  --top-h: 56px;
+  --bar-h: 56px;
+  --focus: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+  --shadow: 0 1px 0 rgba(29, 27, 25, 0.06), 0 8px 24px -12px rgba(29, 27, 25, 0.25);
+}

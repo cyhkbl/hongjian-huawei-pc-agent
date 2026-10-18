@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f8f5ee">
+  <title>鸿笺 · 华为 PC 营销软文智能体</title>
+  <meta name="description" content="鸿笺：基于知识库的华为 PC 营销软文智能体。每句话都能追到出处。">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <link rel="stylesheet" href="/static/css/article.css">
+  <link rel="stylesheet" href="/static/css/panels.css">
+  <link rel="modulepreload" href="/static/js/main.js">
+</head>
+<body>
+  <a class="skip" href="#col-article">跳到稿件</a>
+
+  <header class="top">
+    <div class="brand">
+      <span class="seal" aria-hidden="true">鸿</span>
+      <div class="brand-text">
+        <h1>鸿笺</h1>
+        <p>华为 PC 营销软文智能体</p>
+      </div>
+    </div>
+    <nav class="views" aria-label="主视图">
+      <button type="button" class="view-btn" data-view="studio" aria-current="page">工作台</button>
+      <button type="button" class="view-btn" data-view="archive">运行档案与自测</button>
+    </nav>
+    <button type="button" id="kb-pill" class="kb-pill" aria-haspopup="dialog" aria-expanded="false" aria-controls="kb-drawer">
+      <span class="lamp" data-state="unknown" aria-hidden="true"></span>
+      <span id="kb-pill-text">知识库连接中</span>
+    </button>
+  </header>
+
+  <main id="studio" class="shell" data-pane="article">
+    <section id="col-task" class="col col-task" aria-label="任务台" tabindex="-1"></section>
+    <section id="col-article" class="col col-article" aria-label="稿件" tabindex="-1"></section>
+    <aside id="col-side" class="col col-side" aria-label="证据、对比与修改" tabindex="-1"></aside>
+  </main>
+
+  <main id="archive" class="archive" hidden aria-label="运行档案与自测"></main>
+
+  <nav class="panebar" id="panebar" aria-label="切换面板">
+    <button type="button" data-pane="task">任务</button>
+    <button type="button" data-pane="article" aria-current="true">稿件</button>
+    <button type="button" data-pane="side">证据与修改</button>
+  </nav>
+
+  <div id="kb-scrim" class="scrim" hidden></div>
+  <aside id="kb-drawer" class="drawer" role="dialog" aria-modal="false" aria-labelledby="kb-title" hidden tabindex="-1"></aside>
+
+  <div id="toast" class="toast" role="status"></div>
+  <div id="live" class="sr" aria-live="polite" aria-atomic="true"></div>
+
+  <noscript><p class="noscript">鸿笺需要启用 JavaScript 才能使用。</p></noscript>
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

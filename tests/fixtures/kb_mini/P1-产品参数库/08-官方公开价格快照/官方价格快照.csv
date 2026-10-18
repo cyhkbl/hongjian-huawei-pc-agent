@@ -1,0 +1,6 @@
+记录ID,规范产品名称,原始产品名称,分类,精确款式,型号或SKU,价格类型,页面金额（元）,参考或划线金额（元）,条件摘要,库存状态,地区上下文,登录状态,核验时间,来源标题,官方URL,取证方式,证据摘要,核验状态,映射备注,原始记录ID
+PRICE-0001,HUAWEI MateBook Pro,HUAWEI MateBook Pro,消费级PC,示例款 0,SKU-X,官方商城页面价,5000,,示例条件,有货,大陆,未登录,2026-10-17T10:00:00+08:00,示例,https://example.invalid/matebook-pro/,示例,示例,已核验,,
+PRICE-0002,HUAWEI MateBook Pro,HUAWEI MateBook Pro,消费级PC,官网,,官网参考起价,4900,,,,,,2026-10-17T10:00:00+08:00,示例,https://example.invalid/matebook-pro/,,,示例,,
+PRICE-0003,HUAWEI MateBook Pro S,HUAWEI MateBook Pro S,消费级PC,示例款 1,SKU-X,未公开金额,,,示例条件,有货,大陆,未登录,2026-10-17T10:00:00+08:00,示例,https://example.invalid/matebook-pro-s/,示例,示例,已核验,,
+PRICE-0004,HUAWEI MateBook Pro S,HUAWEI MateBook Pro S,消费级PC,官网,,官网参考起价,4900,,,,,,2026-10-17T10:00:00+08:00,示例,https://example.invalid/matebook-pro-s/,,,示例,,
+PRICE-0005,示例配件,示例配件,电脑配件,配件,,官方询价,,,,,,,,,,,,,,
