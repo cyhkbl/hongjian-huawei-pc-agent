@@ -106,8 +106,9 @@ def error_body(code: str, message: str, hint: str = "", **extra: Any) -> dict:
 class RateLimiter:
     """Sliding-window limiter keyed by (client ip, bucket)."""
 
-    def __init__(self, general: int, heavy: int, window: float = 60.0):
-        self.limits = {"general": general, "heavy": heavy}
+    def __init__(self, general: int, heavy: int, soft: Optional[int] = None, window: float = 60.0):
+        self.limits = {"general": general, "heavy": heavy,
+                       "soft": soft if soft is not None else max(general, heavy * 4)}
         self.window = window
         self._hits: dict[tuple[str, str], deque] = {}
         self._lock = threading.Lock()
@@ -167,7 +168,12 @@ class GuardMiddleware:
             return await self.app(scope, receive, send)
         path = scope["path"]
         if path.startswith("/api/"):
-            bucket = "heavy" if (scope["method"] == "POST" and path in HEAVY_PATHS) else "general"
+            if scope["method"] == "POST" and path in SOFT_PATHS:
+                bucket = "soft"
+            elif scope["method"] == "POST" and path in HEAVY_PATHS:
+                bucket = "heavy"
+            else:
+                bucket = "general"
             wait = self.limiter.check(client_ip(Request(scope)), bucket)
             if wait is not None:
                 body = json.dumps(error_body("rate_limited", "请求太频繁了", f"请 {wait} 秒后再试。"),
@@ -191,6 +197,8 @@ class GuardMiddleware:
 
 HEAVY_PATHS = {"/api/run", "/api/run/stream", "/api/revise", "/api/revise/stream",
                "/api/selftest/run", "/api/export"}
+# 自测用例走独立配额：跑完 21 条不会吃掉演示用的生成额度
+SOFT_PATHS = {"/api/selftest/run"}
 
 
 class BodyLimitMiddleware:
