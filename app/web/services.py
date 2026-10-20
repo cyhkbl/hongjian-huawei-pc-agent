@@ -94,14 +94,15 @@ class Services:
         state, task = mod.chat(req, kb, state)
         self._chat_states[state.session_id] = state
         out: dict = {"state": state.model_dump(), "task": task.model_dump()}
+        # 不在这里顺手出稿：最后一轮若跑完整流水线，请求会超过网关时限。
+        # 只把拼好的请求体回给前端，由前端再调一次 /api/personas。
         if state.ready:
-            from app.agent.pipeline import run as _run  # noqa: PLC0415
             from app.models import RunRequest  # noqa: PLC0415
-            r = _run(RunRequest(model_ids=task.model_ids, platform=task.platform,
-                                scenario=task.scenario, audience=task.audience,
-                                selling_point=task.selling_point,
-                                text=task.raw), self.ctx())
-            out["run"] = r.model_dump()
+            out["run_request"] = RunRequest(
+                model_ids=task.model_ids, platform=task.platform, scenario=task.scenario,
+                audience=task.audience, selling_point=task.selling_point,
+                text=task.raw,
+            ).model_dump()
         return out
 
     # ---- 一稿四发 -------------------------------------------------------
@@ -125,6 +126,33 @@ class Services:
     def score_titles(self, titles: list[str], platform: str, model_name: str = "") -> list[dict]:
         mod = _load("app.agent.title_score")
         return [t.model_dump() for t in mod.score_titles(titles, platform, model_name)]
+
+    # ---- 门店实战手册 ---------------------------------------------------
+    def playbook(self, run_id: str) -> dict:
+        from app.models import RunResult  # noqa: PLC0415
+        run = self.load_run(run_id)
+        if run is None or run.article is None:
+            raise KeyError(run_id)
+        mod = _load("app.agent.playbook")
+        return mod.build_playbook(run.model_dump(), self.kb()).model_dump()
+
+    # ---- 发布前预演 ----------------------------------------------------
+    def preflight(self, run_id: str) -> dict:
+        run = self.load_run(run_id)
+        if run is None or run.article is None:
+            raise KeyError(run_id)
+        mod = _load("app.agent.preflight")
+        return mod.build_preflight(run.model_dump(), self.kb()).model_dump()
+
+    def load_run(self, run_id: str):
+        """从落盘目录读一次运行；读不到返回 None。"""
+        import json  # noqa: PLC0415
+        from app.models import RunResult  # noqa: PLC0415
+        path = self.runs_dir() / f"{run_id}.json"
+        try:
+            return RunResult.model_validate(json.loads(path.read_text(encoding="utf-8")))
+        except (FileNotFoundError, ValueError):
+            return None
 
     # ---- knowledge base --------------------------------------------------
     def kb_status(self, refresh: bool = False) -> KBStatus:

@@ -361,6 +361,44 @@ class FactGroup(BaseModel):
     fact_ids: list[str] = Field(default_factory=list)
 
 
+class PlaybookStep(BaseModel):
+    """门店实战手册的一步：说一句、做一个动作、守一条边界。"""
+    label: str
+    fact_ids: list[str] = Field(default_factory=list)
+    say: str                           # 顾客能感知的一句话
+    do: str                            # 现场可做的动作
+    care: str                          # 必须守住的口径/限制
+
+
+class Playbook(BaseModel):
+    """把软文变成到店接待脚本。"""
+    title: str
+    platform: str
+    platform_note: str = ""
+    steps: list[PlaybookStep] = Field(default_factory=list)
+    cta: str = ""
+    closing: str = ""
+
+
+class PreflightItem(BaseModel):
+    """发布前预演发现的一条：读者会追问或可能被卡的表述。"""
+    kind: str                          # ask（会被追问） | risky（有风险）
+    where: str                         # 标题 / 正文 / 价格 / 配图 / 全文
+    text: str
+    ask: str                           # 读者会怎么问
+    prep: str                          # 提前准备什么
+
+
+class Preflight(BaseModel):
+    """发布前预演：站在读者视角挑刺。"""
+    title: str
+    platform: str
+    verdict: str                       # ok | check | risky
+    note: str = ""
+    ready_to_send: bool = False
+    items: list[PreflightItem] = Field(default_factory=list)
+
+
 class FactCard(BaseModel):
     """新品事实卡：生成前先讲清这台机器能说什么、不能说什么。"""
     model_id: str

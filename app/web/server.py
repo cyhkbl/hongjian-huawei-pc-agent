@@ -691,6 +691,28 @@ def create_app(services: Optional[Any] = None) -> FastAPI:
         except Exception as e:
             raise convert_exc(e)
 
+    # ---- 门店实战手册 --------------------------------------------------
+    @app.get("/api/playbook/{run_id}")
+    def playbook(run_id: str):
+        """把一次运行的成稿拆成到店接待脚本。"""
+        try:
+            return json_response(svc.playbook(run_id))
+        except KeyError:
+            raise ApiError(404, "run_not_found", "没有这次运行，或它没有成稿")
+        except Exception as e:
+            raise convert_exc(e)
+
+    # ---- 发布前预演 ----------------------------------------------------
+    @app.get("/api/preflight/{run_id}")
+    def preflight(run_id: str):
+        """站在读者视角挑刺：发出去会被追问什么、可能被卡什么。"""
+        try:
+            return json_response(svc.preflight(run_id))
+        except KeyError:
+            raise ApiError(404, "run_not_found", "没有这次运行，或它没有成稿")
+        except Exception as e:
+            raise convert_exc(e)
+
     # ---- prompt / selftest ----------------------------------------------
     @app.get("/api/prompt")
     def prompt():
