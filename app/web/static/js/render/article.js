@@ -303,6 +303,33 @@ function clarifyState(run) {
 }
 
 // ---------------------------------------------------------------- header
+/** 一题三解的人设切换条：同一个任务写出的几篇，点人设就换。 */
+function personaBar() {
+  const ps = S.personaSet;
+  if (!ps || !ps.runs || ps.runs.length < 2) return null;
+  const runs = ps.runs.filter((r) => r.article);
+  if (runs.length < 2) return null;
+  const ids = runs.map((r) => r.run_id);
+  const group = h("div", { class: "personas", role: "group", "aria-label": "同一任务的多种写法" });
+  group.append(h("span", { class: "personas-label", text: "换个写法" }));
+  ps.personas.forEach((p, i) => {
+    const r = ps.runs[i];
+    if (!r || !r.article) return;
+    group.append(h("button", {
+      type: "button", class: "persona", "aria-current": S.activeId === r.run_id ? "true" : "false",
+      title: p.tagline || "",
+      onclick: () => {
+        S.activeId = r.run_id;
+        S.pinned = null;
+        S.thread = ids;
+        emit("article", "side", "task");
+      },
+    }, h("span", { class: "pname", text: p.name }),
+       h("span", { class: "ptitle", text: r.article.title.slice(0, 12) })));
+  });
+  return group;
+}
+
 function header(run) {
   const thread = S.thread.filter((id) => S.runs.has(id));
   const versions = h("div", { class: "versions", role: "group", "aria-label": "版本链" });
@@ -336,7 +363,7 @@ function header(run) {
         }
       },
     }, h("span", { class: "no", text: no }), h("span", { class: "long", text: name }), h("span", { class: "short sr", text: short }))));
-  return h("div", { class: "art-head" }, bar, canExport ? tabs : null);
+  return h("div", { class: "art-head" }, bar, personaBar(), canExport ? tabs : null);
 }
 
 function renderMenu() {
@@ -398,6 +425,20 @@ function render() {
 
 export function initArticle() {
   on("article", render);
+  on("personaSet", () => {
+    const ps = S.personaSet;
+    if (!ps) return;
+    // 把几种写法的 run 都注册进来，才能切换、才能各自导出
+    const ids = [];
+    for (const r of ps.runs || []) {
+      if (r && r.run_id) { S.runs.set(r.run_id, r); ids.push(r.run_id); }
+    }
+    if (ids.length && !ids.includes(S.activeId)) {
+      S.activeId = ids[0];
+      S.thread = ids;
+    }
+    render();
+  });
   render();
   document.addEventListener("click", (e) => { if (menuOpen && !e.target.closest(".menu-wrap")) { menuOpen = false; renderMenu(); } });
 }

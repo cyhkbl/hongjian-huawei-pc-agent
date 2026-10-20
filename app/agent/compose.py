@@ -15,7 +15,7 @@ from app.models import (
     SourceItem, Strategy, TaskSpec,
 )
 from app.agent import profiles as P
-from app.agent.strategy import label_tag, pick_hook
+from app.agent.strategy import label_tag, persona_shift, pick_hook
 from app.agent.prompts import PROMPT_VERSION, SYSTEM_PROMPT, build_user_message
 
 VALID_KINDS = {"heading", "para", "list", "image", "quote", "callout"}
@@ -252,9 +252,14 @@ def _identity(evidence: EvidencePack, model_id: str) -> Optional[Fact]:
 def _titles(task: TaskSpec, strategy: Strategy, model_short: str, top_label: str, scenario: str, platform: str) -> list[str]:
     sc, pf = P.get_scenario(scenario), P.get_platform(platform)
     if platform == "moments":
-        hk = pick_hook(scenario, platform, task.model_ids[0] if task.model_ids else "", task.selling_point)
+        hk = pick_hook(scenario, platform, task.model_ids[0] if task.model_ids else "", task.selling_point,
+                       shift=persona_shift(task))
         return [hk["short"]]
-    raw = sc["titles"].get(platform) or sc["titles"]["wechat_mp"]
+    raw = list(sc["titles"].get(platform) or sc["titles"]["wechat_mp"])
+    # 人设旋转标题候选：同一场景的备选标题按人设错开，避免几篇同一个标题
+    shift = persona_shift(task)
+    if shift and len(raw) > 1:
+        raw = raw[shift % len(raw):] + raw[:shift % len(raw)]
     out = []
     for t in raw:
         out.append(P.sub(t, m=model_short, p=top_label or "核心卖点"))
@@ -306,7 +311,13 @@ def compose_with_composer(task: TaskSpec, strategy: Strategy, evidence: Evidence
     intro = ""
     price_note = ""
     poster: Optional[dict] = None
-    k = (scenario, platform, model_id)
+    # persona 进种子：同任务不同人设会选到不同的过渡句、结尾句式
+    persona_key = ""
+    for e in (task.extras or []):
+        if e.startswith("persona:"):
+            persona_key = e.split(":", 1)[1].strip()
+            break
+    k = (scenario, platform, model_id, persona_key)
 
     def model_intro_text() -> tuple[str, list[str]]:
         lead = P.pick(["今天要写的是 ", "先说到机器本身，", "要对照资料看的是 ", "本稿的主角是 "], *k, "mi")

@@ -36,7 +36,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.models import ExportRequest, ReviseRequest, RunRequest, RunResult, StageLog
+from app.models import (
+    BatchRunRequest, ChatRequest, ExportRequest, PersonaRunRequest, ReviseRequest,
+    RunRequest, RunResult, StageLog, TitleScoreRequest,
+)
 from app.web import options as opts
 from app.web.services import BackendUnavailable, Services
 
@@ -620,6 +623,73 @@ def create_app(services: Optional[Any] = None) -> FastAPI:
         disp = "attachment; filename*=UTF-8''" + quote(filename, safe="")
         return Response(data, media_type=mime, headers={
             "Content-Disposition": disp, "Cache-Control": "no-store"})
+
+    # ---- 对话式需求挖掘 ------------------------------------------------
+    @app.post("/api/chat/start")
+    def chat_start():
+        acquire_slot()
+        try:
+            return json_response(svc.chat_start())
+        except Exception as e:
+            raise convert_exc(e)
+        finally:
+            slots.release()
+
+    @app.post("/api/chat")
+    def chat(req: ChatRequest):
+        acquire_slot()
+        try:
+            return json_response(svc.chat(req))
+        except Exception as e:
+            raise convert_exc(e)
+        finally:
+            slots.release()
+
+    # ---- 一稿四发 ------------------------------------------------------
+    @app.post("/api/batch")
+    def batch(req: BatchRunRequest):
+        acquire_slot()
+        try:
+            return json_response(svc.batch(req))
+        except Exception as e:
+            raise convert_exc(e)
+        finally:
+            slots.release()
+
+    # ---- 今日推荐 ------------------------------------------------------
+    @app.get("/api/daily")
+    def daily(limit: int = 4):
+        try:
+            return json_response({"ideas": svc.daily(max(1, min(int(limit), 8)))})
+        except Exception as e:
+            raise convert_exc(e)
+
+    # ---- 新品事实卡 ----------------------------------------------------
+    @app.get("/api/factcard/{model_id}")
+    def factcard(model_id: str):
+        try:
+            return json_response(svc.factcard(model_id))
+        except Exception as e:
+            raise convert_exc(e)
+
+    # ---- 一题三解 ------------------------------------------------------
+    @app.post("/api/personas")
+    def personas(req: PersonaRunRequest):
+        acquire_slot()
+        try:
+            return json_response(svc.personas(req))
+        except Exception as e:
+            raise convert_exc(e)
+        finally:
+            slots.release()
+
+    # ---- 标题评分 ------------------------------------------------------
+    @app.post("/api/titles")
+    def titles(req: TitleScoreRequest):
+        try:
+            return json_response({"titles": svc.score_titles(req.titles, req.platform, req.model_name)})
+        except Exception as e:
+            raise convert_exc(e)
 
     # ---- prompt / selftest ----------------------------------------------
     @app.get("/api/prompt")

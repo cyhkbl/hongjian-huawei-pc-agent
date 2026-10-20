@@ -1,0 +1,228 @@
+/* 今日创作台：打开就能写，零表单。 */
+
+#today {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 24px 72px;
+}
+
+.today-hero {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.today-hero h2 {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.today-hero .lede {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--ink-2);
+  font-size: var(--fs-md);
+  line-height: 1.75;
+}
+
+.idea-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+}
+
+.idea {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 18px 16px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  box-shadow: 0 1px 0 rgb(29 27 25 / 4%);
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+
+.idea:hover {
+  border-color: var(--rule-2);
+  box-shadow: 0 2px 10px rgb(29 27 25 / 7%);
+  transform: translateY(-1px);
+}
+
+.idea header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: var(--fs-xs);
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+.chip.season {
+  background: var(--red-wash);
+  color: var(--red-ink);
+  border: 1px solid #e8c4bd;
+}
+
+.chip.plat {
+  background: var(--paper-2);
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+}
+
+.idea h3 {
+  margin: 2px 0 0;
+  font-family: var(--serif);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.idea .model {
+  margin: 0;
+  flex: 1;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+
+.idea .btn {
+  align-self: stretch;
+  margin-top: 4px;
+}
+
+.today-alt {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+}
+
+.today-alt h3 {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.today-alt .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* 窄屏：一列，按钮更好点 */
+@media (max-width: 640px) {
+  #today { padding: 24px 16px 56px; }
+  .today-hero h2 { font-size: 25px; }
+  .idea-grid { grid-template-columns: 1fr; }
+  .idea .btn { padding: 11px 14px; font-size: var(--fs-base); }
+}
+
+/* 一题三解：同一任务的多种写法，横向切换 */
+.personas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.personas-label {
+  color: var(--mute);
+  font-size: var(--fs-xs);
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+.persona {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 11px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+
+.persona:hover { border-color: var(--rule-2); }
+
+.persona[aria-current="true"] {
+  border-color: var(--red);
+  background: var(--red-wash);
+}
+
+.persona .pname {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.persona[aria-current="true"] .pname { color: var(--red-ink); }
+
+.persona .ptitle {
+  font-size: var(--fs-xs);
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .personas { padding: 7px 10px; }
+  .persona { padding: 7px 10px; }
+}
+
+/* 新品事实卡 */
+.factcard {
+  margin-bottom: 14px;
+  padding: 12px 12px 10px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--red);
+  border-radius: 3px;
+}
+
+.factcard h3 {
+  margin: 0 0 6px;
+  font-family: var(--serif);
+  font-size: var(--fs-base);
+  font-weight: 600;
+}
+
+.factcard .fc-group { margin: 8px 0 0; }
+
+.factcard .fc-group b {
+  display: block;
+  margin-bottom: 3px;
+  font-size: var(--fs-xs);
+  letter-spacing: .04em;
+  color: var(--mute);
+}
+
+.factcard ul { margin: 0; padding-left: 18px; }
+
+.factcard li {
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.factcard .fc-limits li { color: var(--warn); }
+.factcard .fc-unconfirmed li { color: var(--mute); font-style: italic; }
+
+@media (prefers-reduced-motion: reduce) {
+  .persona { transition: none; }
+}

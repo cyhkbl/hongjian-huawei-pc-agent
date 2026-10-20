@@ -25,6 +25,40 @@ PLATFORM_ORDER = ["wechat_mp", "xiaohongshu", "moments", "poster"]
 DEFAULT_SCENARIO = "office"
 DEFAULT_PLATFORM = "wechat_mp"
 
+# 展示用中文名与一句话说明（对话式需求挖掘、一稿四发、界面都要用）
+SCENARIO_LABELS = {
+    "back_to_school": "开学季",
+    "office": "职场办公",
+    "creator": "内容创作",
+    "home_upgrade": "家庭换新",
+    "enterprise_procurement": "企业采购",
+    "store_visit": "门店到访",
+    "new_launch": "新品首发",
+    "festival": "节日营销",
+}
+SCENARIO_HINTS = {
+    "back_to_school": "给要入学或返校的学生，以及帮孩子挑电脑的家长",
+    "office": "给经常出差或固定在工位的职场人",
+    "creator": "给设计、摄影、视频创作者",
+    "home_upgrade": "给全家共用或替换旧电脑的家庭",
+    "enterprise_procurement": "给中小企业与团队采购",
+    "store_visit": "给到店的附近潜在顾客",
+    "new_launch": "给关注新品的用户",
+    "festival": "给节日送礼或家庭购机的人",
+}
+PLATFORM_LABELS = {
+    "wechat_mp": "公众号",
+    "xiaohongshu": "小红书",
+    "moments": "门店朋友圈",
+    "poster": "门店海报",
+}
+PLATFORM_HINTS = {
+    "wechat_mp": "长图文，1200-2200 字，2-4 张图，分节叙事",
+    "xiaohongshu": "口语短段，3-6 张图，带话题标签",
+    "moments": "短文案，只讲一个卖点，1-3 张图",
+    "poster": "主副标题加三个以内卖点，一张主视觉",
+}
+
 
 def pick(seq: Sequence, *keys: str):
     """确定性“随机”：同样的 keys 永远选同一项。"""

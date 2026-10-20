@@ -28,6 +28,9 @@ def _load(module: str):
 class Services:
     """Real backend bindings. Every call resolves its module at call time."""
 
+    def __init__(self) -> None:
+        self._chat_states: dict[str, Any] = {}
+
     # ---- context ---------------------------------------------------------
     def ctx(self):
         from app.context import get_context
@@ -74,6 +77,54 @@ class Services:
 
     def selftest_run(self, case_id: str) -> dict:
         return _load("app.agent.selftest").run_case(self.ctx(), case_id)
+
+    # ---- 对话式需求挖掘 -------------------------------------------------
+    def chat_start(self) -> dict:
+        mod = _load("app.agent.converse")
+        state = mod.start_session(self.kb())
+        self._chat_states[state.session_id] = state
+        return {"state": state.model_dump(), "task": mod._to_task(state).model_dump()}
+
+    def chat(self, req) -> dict:
+        mod = _load("app.agent.converse")
+        kb = self.kb()
+        state = self._chat_states.get(req.session_id)
+        if state is None:
+            state = mod.start_session(kb, req.session_id)
+        state, task = mod.chat(req, kb, state)
+        self._chat_states[state.session_id] = state
+        out: dict = {"state": state.model_dump(), "task": task.model_dump()}
+        if state.ready:
+            from app.agent.pipeline import run as _run  # noqa: PLC0415
+            from app.models import RunRequest  # noqa: PLC0415
+            r = _run(RunRequest(model_ids=task.model_ids, platform=task.platform,
+                                scenario=task.scenario, audience=task.audience,
+                                selling_point=task.selling_point,
+                                text=task.raw), self.ctx())
+            out["run"] = r.model_dump()
+        return out
+
+    # ---- 一稿四发 -------------------------------------------------------
+    def batch(self, req) -> dict:
+        return _load("app.agent.batch").batch_run(req, self.ctx()).model_dump()
+
+    # ---- 今日推荐 -------------------------------------------------------
+    def daily(self, limit: int = 4) -> list[dict]:
+        mod = _load("app.agent.daily")
+        return [d.model_dump() for d in mod.daily_ideas(self.kb(), limit=limit)]
+
+    # ---- 新品事实卡 -----------------------------------------------------
+    def factcard(self, model_id: str) -> dict:
+        return _load("app.agent.factcard").build_fact_card(model_id, self.kb()).model_dump()
+
+    # ---- 一题三解 -------------------------------------------------------
+    def personas(self, req) -> dict:
+        return _load("app.agent.personas").persona_run(req, self.ctx()).model_dump()
+
+    # ---- 标题评分 -------------------------------------------------------
+    def score_titles(self, titles: list[str], platform: str, model_name: str = "") -> list[dict]:
+        mod = _load("app.agent.title_score")
+        return [t.model_dump() for t in mod.score_titles(titles, platform, model_name)]
 
     # ---- knowledge base --------------------------------------------------
     def kb_status(self, refresh: bool = False) -> KBStatus:

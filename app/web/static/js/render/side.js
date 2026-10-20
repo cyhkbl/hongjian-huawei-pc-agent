@@ -83,9 +83,49 @@ function evidenceFor(run, key) {
   return card;
 }
 
+/** 新品事实卡：这台机器能说什么、不能说什么，避免大模型对新品想当然。 */
+function factCardView() {
+  const c = S.factCard;
+  if (!c) return null;
+  if (!c.ok) return h("p", { class: "side-empty", text: c.note || "这台机器不在知识库里。" });
+  const box = h("section", { class: "factcard" });
+  box.append(h("h3", { text: c.model_name }));
+  box.append(h("p", { class: "hint-line", text: c.note }));
+
+  if (c.groups && c.groups.length) {
+    const det = h("details", { class: "fold", open: "" });
+    det.append(h("summary", { text: `能说的（${c.groups.length} 类）` }));
+    for (const g of c.groups) {
+      det.append(h("div", { class: "fc-group" }, h("b", { text: g.label }),
+        h("ul", null, g.facts.map((t) => h("li", { text: t })))));
+    }
+    box.append(det);
+  }
+  if (c.limits && c.limits.length) {
+    const det = h("details", { class: "fold", open: "" });
+    det.append(h("summary", { text: `不能说的（${c.limits.length}）` }));
+    det.append(h("ul", { class: "fc-limits" }, c.limits.map((t) => h("li", { text: t }))));
+    box.append(det);
+  }
+  if (c.unconfirmed && c.unconfirmed.length) {
+    const det = h("details", { class: "fold" });
+    det.append(h("summary", { text: `资料未确认（${c.unconfirmed.length}）` }));
+    det.append(h("ul", { class: "fc-unconfirmed" }, c.unconfirmed.map((t) => h("li", { text: t }))));
+    box.append(det);
+  }
+  if (c.price_lines && c.price_lines.length) {
+    const det = h("details", { class: "fold" });
+    det.append(h("summary", { text: `可引用的价格（${c.price_lines.length}）` }));
+    det.append(h("ul", null, c.price_lines.map((t) => h("li", { text: t }))));
+    box.append(det);
+  }
+  return box;
+}
+
 function renderEvidence(run) {
   const wrap = h("div");
   if (!run || !run.article) return h("p", { class: "side-empty", text: "生成稿件后，点正文里的任意一句，这里会显示它依赖的事实、资料标题、知识库路径和官方链接。" });
+  wrap.append(factCardView() || h("div"));
   const key = (S.pinned && S.pinned.key) || S.hover;
   wrap.append(h("p", { class: "hint-line", text: S.pinned ? "已固定。再点一次同一句取消，Esc 也可以。" : "悬停或聚焦预览，点击固定。" }));
   const card = key ? evidenceFor(run, key) : null;
@@ -250,5 +290,6 @@ function render() {
 export function initSide() {
   on("side", render);
   on("progress", () => { if (S.side === "revise") render(); });
+  on("factCard", () => { if (S.side === "evidence") render(); });
   render();
 }

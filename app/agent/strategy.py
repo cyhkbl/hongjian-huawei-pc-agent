@@ -56,9 +56,57 @@ def _positive(pool: list[Fact], model_id: str) -> list[Fact]:
     return P.dedupe_facts(sorted(ok, key=lambda f: (-P.KIND_RANK.get(f.kind, 0.5), f.id)))
 
 
-def pick_hook(scenario: str, platform: str, model_id: str, seed: str = "") -> dict:
+# 人设 → 卖点偏好偏移。同一场景下，不同人设先讲什么不一样：
+# 导购先讲顾客能摸到的（便携/屏幕），学长先讲学生真正愁的（续航/接口），
+# 同事先讲场景（协同/AI），买手先讲有口径可查的（屏幕参数/性能）。
+_PERSONA_TAG_NUDGE = {
+    "counter": {"portable": 0.30, "display": 0.20, "ports": 0.15},
+    "senior": {"battery": 0.30, "ports": 0.20, "study": 0.15},
+    "neighbor": {"collab": 0.25, "ai": 0.20, "office": 0.20},
+    "buyer": {"display": 0.25, "performance": 0.25, "storage": 0.15},
+}
+
+
+def persona_shift(task: TaskSpec) -> int:
+    """从 extras 里读人设偏移：persona:<key>:<shift>。
+
+    偏移由 persona_run 按「第几个人设」传入，保证挑中的 N 个人设
+    拿到互不相同的 hook 与标题候选——不靠哈希，因为确定性哈希会让多个人设撞车。
+    """
+    for e in task.extras or []:
+        if e.startswith("persona:"):
+            parts = e.split(":")
+            if len(parts) >= 3 and parts[2].strip().isdigit():
+                return int(parts[2].strip())
+    return 0
+
+
+def _persona_of(task: TaskSpec):
+    """从 task.extras 里取人设（persona:<key>），并带上该人设的语气与受众覆盖。"""
+    key = ""
+    for e in task.extras or []:
+        if e.startswith("persona:"):
+            key = e.split(":")[1].strip()
+            break
+    if not key:
+        return None
+    from app.agent.personas import PERSONAS  # noqa: PLC0415
+    p = PERSONAS.get(key)
+    if not p:
+        return None
+    return {"key": key, **p}
+
+
+def pick_hook(scenario: str, platform: str, model_id: str, seed: str = "",
+              shift: int = 0) -> dict:
+    """按人设偏移取 hook。shift 直接决定取第几个，避开哈希撞车。"""
     sc = P.get_scenario(scenario)
-    return P.pick(sc["hooks"], scenario, platform, model_id, seed)
+    hooks = list(sc["hooks"])
+    if not hooks:
+        raise ValueError(f"场景 {scenario} 没有配置 hook")
+    if shift:
+        return hooks[shift % len(hooks)]
+    return P.pick(hooks, scenario, platform, model_id, seed)
 
 
 def _tag_candidates(pos: list[Fact], scenario: str, platform: str, model_id: str,
@@ -116,11 +164,18 @@ def build_strategy(task: TaskSpec, models: list[ProductModel], pool: list[Fact])
     model_id = model.model_id if model else (task.model_ids[0] if task.model_ids else "")
     model_name = model.short_name if model else "该机型"
     fit = P.model_fit(model_id)
+    persona = _persona_of(task)
     rationale: list[str] = []
 
     pos = _positive(pool, model_id)
     user_tag = P.tag_for_user_point(task.selling_point) if task.selling_point else None
+    persona_nudge = _PERSONA_TAG_NUDGE.get(persona["key"], {}) if persona else {}
     cands = _tag_candidates(pos, scenario, platform, model_id, user_tag)
+    if persona_nudge:
+        # 人设偏好只影响排序，不动事实本身
+        bumped = [(score + persona_nudge.get(tag, 0.0), tag, facts) for score, tag, facts in cands]
+        bumped.sort(key=lambda x: -x[0])
+        cands = bumped
 
     # ---- 卖点：按分数取前 N，事实不重复
     n_points = _n_points(task, platform, scenario)
@@ -144,7 +199,8 @@ def build_strategy(task: TaskSpec, models: list[ProductModel], pool: list[Fact])
             break
 
     # ---- 解释：切入点 / 排序 / 图 / CTA
-    hook = pick_hook(scenario, platform, model_id, task.selling_point)
+    hook = pick_hook(scenario, platform, model_id, task.selling_point,
+                     shift=persona_shift(task))
     rationale.append(
         f"切入点：选“{hook['angle']}”。因为“{sc['label']}”场景的读者处于“{sc['stage']}”，"
         f"最大的卡点是“{sc['pains'][0]}”；这个开场不含任何产品事实，只先让读者认出自己。")
@@ -254,12 +310,18 @@ def build_strategy(task: TaskSpec, models: list[ProductModel], pool: list[Fact])
         length = f"长版：{length.split('（')[0]} 上限"
 
     tone = pf["tone"]
+    if persona:
+        tone = f"{persona['tone']}（人设：{persona['name']}）"
     if sc.get("single_point"):
         tone += "；本场景只放大一个核心卖点"
+    if persona:
+        rationale.insert(0, f"人设：{persona['name']}——{persona['tagline']}。同一批知识库事实，换人设重写，避免千篇一律。")
+        if persona.get("extras"):
+            rationale.append("人设约束：" + "；".join(persona["extras"]) + "。")
 
     return Strategy(
         scenario_label=sc["label"], platform_label=pf["label"],
-        audience=task.audience or sc["audience"],
+        audience=(persona["audience"] if persona and persona.get("audience") else (task.audience or sc["audience"])),
         usage_scene=sc["usage_scene"], purchase_stage=sc["stage"],
         pain_points=list(sc["pains"]), goal=sc["goal"],
         hook=f"{hook['angle']}：{hook['short']}", tone=tone,

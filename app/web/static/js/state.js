@@ -22,6 +22,9 @@ export const S = {
   showMarks: true,
   history: [],
   archive: { prompt: null, promptError: null, cases: null, casesError: null, results: new Map(), running: false },
+  personaSet: null,     // 一题三解的结果：{personas, runs, diff}
+  factCard: null,       // 新品事实卡：{model_name, groups, limits, unconfirmed, price_lines}
+  chat: null,           // 对话式需求挖掘
 };
 
 const subs = new Map();
@@ -38,3 +41,16 @@ export function emit(...topics) {
 }
 
 export const active = () => S.runs.get(S.activeId) || null;
+
+export function setPersonaSet(r) { S.personaSet = r; emit("personaSet", "side", "article"); }
+export function startChat() { S.chat = { fresh: true }; emit("chat", "side"); }
+
+export function showStudio() {
+  S.view = "studio";
+  emit("view");
+  requestAnimationFrame(() => document.getElementById("col-task")?.focus());
+}
+
+// 供渲染层以 S.xxx 形式调用
+S.showStudio = showStudio;
+S.startChat = startChat;

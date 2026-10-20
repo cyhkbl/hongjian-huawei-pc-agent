@@ -332,6 +332,10 @@ def run(req: RunRequest, ctx: AppContext, on_stage: Optional[Callable[[StageLog]
     try:
         st.start("parse")
         (task, clar), parse_note = _parse(req, ctx.kb)
+        # 调用方通过 req.extras 传入的人设/风格指令，合并进 task，让策略与文案都用到
+        if req.extras:
+            merged = list(dict.fromkeys(list(task.extras) + list(req.extras)))
+            task = task.model_copy(update={"extras": merged})
         st.end("parse", parse_note or f"机型 {len(task.model_ids)} 个｜场景 {task.scenario or '未指定'}｜平台 {task.platform or '未指定'}"
                         + (f"｜待拒绝要求 {len(task.blocked_requests)} 条" if task.blocked_requests else ""))
         st.start("clarify")

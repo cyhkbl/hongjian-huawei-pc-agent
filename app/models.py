@@ -148,6 +148,46 @@ class Clarification(BaseModel):
     allow_free_text: bool = False
 
 
+# --------------------------------------------------------------------------
+# 对话式需求挖掘（Converse）
+# --------------------------------------------------------------------------
+class ChatChoice(BaseModel):
+    """对话里的一个可点选项。"""
+    value: str
+    label: str
+    hint: str = ""
+
+
+class ChatTurn(BaseModel):
+    """Agent 发起的一轮提问。"""
+    question_id: str
+    question: str
+    why: str = ""
+    choices: list[ChatChoice] = Field(default_factory=list)
+    multi: bool = False
+    allow_skip: bool = True
+    free_text_hint: str = ""
+
+
+class ChatState(BaseModel):
+    """多轮对话进度：已知什么、还缺什么、问过什么。"""
+    session_id: str = ""
+    turns_used: int = 0
+    max_turns: int = 4
+    known: dict = Field(default_factory=dict)
+    asked: list[str] = Field(default_factory=list)
+    pending: Optional[ChatTurn] = None
+    ready: bool = False
+    defaults_applied: list[str] = Field(default_factory=list)
+
+
+class ChatRequest(BaseModel):
+    session_id: str = ""
+    text: str = ""
+    choice_value: str = ""
+    skip: bool = False
+
+
 class TaskSpec(BaseModel):
     raw: str = ""
     model_ids: list[str] = Field(default_factory=list)   # usually 1; >1 only for an explicit comparison task
@@ -287,9 +327,53 @@ class Verification(BaseModel):
     facts: list[FactCheckItem]
     images: list[ImageCheckItem]
     compliance: list[ComplianceIssue]
-    pending: list[str]                 # 待确认信息 shown to the human
+    pending: list[str]
     verdict: Literal["pass", "pass_with_flags", "blocked"]
-    stats: dict = Field(default_factory=dict)   # {"sentences":n,"cited":n,"removed":n,"rewritten":n,"flagged":n,"images_ok":n,"compliance_blocks":n}
+    stats: dict = Field(default_factory=dict)
+
+
+# --------------------------------------------------------------------------
+# 一稿四发 / 标题评分 / 今日推荐 / 新品事实卡 / 一题三解
+# --------------------------------------------------------------------------
+class TitleScore(BaseModel):
+    title: str
+    score: int
+    reasons: list[str]
+    tags: list[str]
+
+
+class DailyIdea(BaseModel):
+    """给门店销售员的「今天该写什么」。"""
+    idea_id: str
+    title: str
+    scenario: str
+    platform: str
+    model_id: str
+    model_name: str
+    reason: str
+    season_tag: str = ""
+    effort: str = "一键生成"
+
+
+class FactGroup(BaseModel):
+    label: str
+    facts: list[str]
+    fact_ids: list[str] = Field(default_factory=list)
+
+
+class FactCard(BaseModel):
+    """新品事实卡：生成前先讲清这台机器能说什么、不能说什么。"""
+    model_id: str
+    model_name: str
+    ok: bool = True
+    os_label: str = ""
+    snapshot_date: str = ""
+    groups: list[FactGroup] = Field(default_factory=list)
+    limits: list[str] = Field(default_factory=list)
+    limit_fact_ids: list[str] = Field(default_factory=list)
+    unconfirmed: list[str] = Field(default_factory=list)
+    price_lines: list[str] = Field(default_factory=list)
+    note: str = ""
 
 
 # --------------------------------------------------------------------------
@@ -349,6 +433,54 @@ class RunRequest(BaseModel):
     selling_point: str = ""
     want_price: bool = False
     parent_run_id: str = ""            # when answering a clarification, link to the previous run
+    extras: list[str] = Field(default_factory=list)      # extra style instructions (persona prompts)
+    persona: str = ""                  # persona key: counter / senior / neighbor / buyer
+
+
+class PersonaRunRequest(BaseModel):
+    """一题三解：同一任务用不同人设各写一篇。"""
+    text: str = ""
+    model_ids: list[str] = Field(default_factory=list)
+    scenario: Optional[ScenarioId] = None
+    platform: Optional[PlatformId] = None
+    audience: str = ""
+    selling_point: str = ""
+    personas: list[str] = Field(default_factory=list)
+
+
+class PersonaRunResult(BaseModel):
+    persona_set_id: str
+    created_at: str
+    scenario: str
+    platform: str
+    personas: list[dict]
+    runs: list[RunResult]
+    diff: dict = Field(default_factory=dict)
+
+
+class BatchRunRequest(BaseModel):
+    """一稿四发：同一任务跑多个平台。"""
+    text: str = ""
+    model_ids: list[str] = Field(default_factory=list)
+    scenario: Optional[ScenarioId] = None
+    audience: str = ""
+    selling_point: str = ""
+    platforms: list[PlatformId] = Field(default_factory=list)
+    parent_run_id: str = ""
+
+
+class BatchRunResult(BaseModel):
+    batch_id: str
+    created_at: str
+    task: TaskSpec
+    runs: list[RunResult]
+    diff: dict = Field(default_factory=dict)
+
+
+class TitleScoreRequest(BaseModel):
+    titles: list[str]
+    platform: PlatformId
+    model_name: str = ""
 
 
 class ReviseRequest(BaseModel):

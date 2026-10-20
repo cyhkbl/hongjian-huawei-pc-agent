@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Optional
+import time
+from typing import Callable, Optional
 
 import httpx
 
@@ -61,13 +62,18 @@ def _extract_json(text: str) -> dict:
 
 
 class LLMClient:
-    def __init__(self, base_url: str, api_key: str, model: str, timeout: float = 90.0,
-                 temperature: float = 0.3, transport: Optional[httpx.BaseTransport] = None):
+    def __init__(self, base_url: str, api_key: str, model: str, timeout: float = 240.0,
+                 temperature: float = 0.3, transport: Optional[httpx.BaseTransport] = None,
+                 max_retries: int = 3, backoff: float = 3.0,
+                 sleep: "Optional[Callable[[float], None]]" = None):
         self.base_url = base_url.rstrip("/")
         self._api_key = api_key           # 仅用于请求头；不输出
         self.model = model
         self.timeout = timeout
         self.temperature = temperature
+        self.max_retries = max_retries
+        self.backoff = backoff
+        self._sleep = sleep or time.sleep
         self._transport = transport
         self.last_mode = ""               # "json_object" | "plain"
 
@@ -78,7 +84,7 @@ class LLMClient:
     def _url(self) -> str:
         return self.base_url if self.base_url.endswith("/chat/completions") else self.base_url + "/chat/completions"
 
-    def _post(self, payload: dict) -> dict:
+    def _post_once(self, payload: dict) -> dict:
         headers = {"Authorization": f"Bearer {self._api_key}", "Content-Type": "application/json"}
         try:
             with httpx.Client(timeout=self.timeout, transport=self._transport) as c:
@@ -96,7 +102,12 @@ class LLMClient:
         if r.status_code >= 400:
             detail = ""
             try:
-                detail = str((r.json().get("error") or {}).get("message", ""))[:160]
+                j = r.json()
+                err = j.get("error") or j.get("detail") or {}
+                if isinstance(err, dict):
+                    inner = err.get("error")
+                    err = inner if isinstance(inner, dict) else err
+                detail = str(err.get("message") if isinstance(err, dict) else err)[:160]
             except Exception:  # noqa: BLE001
                 detail = r.text[:120]
             raise LLMError(f"LLM 返回 HTTP {r.status_code}：{self._scrub(detail)}")
@@ -104,6 +115,23 @@ class LLMClient:
             return r.json()
         except ValueError:
             raise LLMError("LLM 返回的不是 JSON") from None
+
+    def _post(self, payload: dict) -> dict:
+        """单次请求；429 / 5xx / 超时按退避重试。"""
+        last: Optional[LLMError] = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                return self._post_once(payload)
+            except LLMError as e:
+                msg = str(e)
+                retryable = ("HTTP 429" in msg) or ("HTTP 5" in msg) or ("超时" in msg) or ("网络错误" in msg)
+                last = e
+                if not retryable or attempt >= self.max_retries:
+                    raise
+                # 频控线性拉长，其余翻倍
+                delay = self.backoff * (attempt + 1) if "HTTP 429" in msg else self.backoff * (2 ** attempt)
+                self._sleep(delay)
+        raise last or LLMError("LLM 调用失败")
 
     def _scrub(self, s: str) -> str:
         return s.replace(self._api_key, "****") if self._api_key else s

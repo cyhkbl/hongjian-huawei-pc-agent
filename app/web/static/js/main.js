@@ -7,6 +7,7 @@ import { initArticle, closeMenu, setPin } from "./render/article.js";
 import { initSide } from "./render/side.js";
 import { initDrawer, closeDrawer } from "./render/drawer.js";
 import { initArchive, enterArchive, renderArchive } from "./render/archive.js";
+import { enterToday } from "./render/today.js";
 
 function applyPane() {
   const shell = $("#studio");
@@ -20,11 +21,15 @@ function applyPane() {
 
 function applyView() {
   const studio = S.view === "studio";
+  const today = S.view === "today";
   $("#studio").hidden = !studio;
-  $("#archive").hidden = studio;
+  $("#today").hidden = !today;
+  $("#archive").hidden = !(S.view === "archive");
+  $("#panebar").hidden = !studio;
   document.body.dataset.view = S.view;
   for (const b of $$(".view-btn")) b.setAttribute("aria-current", b.dataset.view === S.view ? "page" : "false");
-  if (!studio) { renderArchive(); enterArchive(); }
+  if (today) enterToday();
+  if (!studio && !today) { renderArchive(); enterArchive(); }
   window.scrollTo(0, 0);
 }
 
@@ -51,6 +56,7 @@ async function boot() {
   wire();
   if (window.matchMedia("(max-width: 1100px)").matches) S.pane = "task";
   applyPane();
+  S.view = "today";                 // 打开就是今日创作台：零表单，一键就能写
   applyView();
 
   loadKb(false);
